@@ -14,6 +14,8 @@ from prostate158.network.mixformer.mixing_unetr import MixingUNETR
 from prostate158.network.mixformer.mixing_unetr_k import MixingUNETR as MixingUNETR_K
 from prostate158.network.mixformer.mixing_unetr_q import MixingUNETR as MixingUNETR_Q
 from prostate158.network.mixformer.mixing_unetr_qk import MixingUNETR as MixingUNETR_QK
+from prostate158.network.mixformer.mixing_unetr_non import MixingUNETR as MixingUNETR_NON
+
 from prostate158.network.UXNet_3D.network_backbone import UXNET
 from monai.networks.nets import UNet
 
@@ -98,9 +100,9 @@ from monai.networks.nets import UNet
 # print('FLOPs = ' + str(flops/1000**3) + 'G')
 # print('Params = ' + str(params/1000**2) + 'M')
 
-model = MixingUNETR_QK(
+model = MixingUNETR_NON(
             img_size=(96, 96, 96),
-            depths=[2,2,6,6],
+            depths=[2,2,2,2],
             # num_heads=(3,6,12,24),
             in_channels=1,
             out_channels=3,

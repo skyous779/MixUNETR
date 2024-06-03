@@ -25,6 +25,7 @@ from prostate158.network.mixformer.mixing_unetr_k import MixingUNETR as MixingUN
 from prostate158.network.mixformer.mixing_unetr_q import MixingUNETR as MixingUNETR_Q
 from prostate158.network.mixformer.mixing_unetr_qk import MixingUNETR as MixingUNETR_QK
 from prostate158.network.mixformer.mixing_unetr_qkv import MixingUNETR as MixingUNETR_QKV
+from prostate158.network.mixformer.mixing_unetr_non import MixingUNETR as MixingUNETR_NON
 # from prostate158.network.mixformer.mixing_unetr_v2 import MixingUNETR as MixingUNETR_V2
 # from prostate158.network.mixformer.mixing_unetr_v3 import MixingUNETR as MixingUNETR_V3
 # from prostate158.network.mixformer.mixing_unetr_v4 import MixingUNETR as MixingUNETR_V4
@@ -112,6 +113,14 @@ def get_model(config: dict):
                 feature_size=48,
             )
     elif config.network == "mixunetr_qkv":
+        return MixingUNETR_QKV(
+                in_channels=len(config.data.image_cols),
+                out_channels=config.model.out_channels,
+                depths=config.model.depth,
+                img_size=(96,96,96),
+                feature_size=48,
+            )
+    elif config.network == "mixunetr_non":
         return MixingUNETR_QKV(
                 in_channels=len(config.data.image_cols),
                 out_channels=config.model.out_channels,

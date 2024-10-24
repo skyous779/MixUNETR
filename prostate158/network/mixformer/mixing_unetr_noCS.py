@@ -1,3 +1,13 @@
+'''
+Author: skyous 1019364238@qq.com
+Date: 2024-10-24 11:04:34
+LastEditors: skyous 1019364238@qq.com
+LastEditTime: 2024-10-24 11:04:43
+FilePath: /prostate158/prostate158/network/mixformer/mixing_unetr_noCS.py
+Description: o use channel interaction and spatial interaction
+
+Copyright (c) 2024 by 1019364238@qq.com, All Rights Reserved. 
+'''
 # Copyright (c) MONAI Consortium
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -114,7 +124,6 @@ class MixingUNETR(nn.Module):
         downsample="merging",
         init="xavier",
         adaptivegamma = False,
-        act_layer: str = "GELU",
     ) -> None:
         """
         Args:
@@ -196,7 +205,6 @@ class MixingUNETR(nn.Module):
             use_checkpoint=use_checkpoint,
             spatial_dims=spatial_dims,
             downsample=look_up_option(downsample, MERGING_MODE) if isinstance(downsample, str) else downsample,
-            act_layer=act_layer,
         )
 
         self.encoder1 = UnetrBasicBlock(
@@ -749,21 +757,21 @@ class MixAttention(nn.Module):
             nn.BatchNorm3d(dim),
             nn.GELU()
         )
-        self.channel_interaction = nn.Sequential(
-            nn.Conv3d(dim, dim // 8, kernel_size=1),
-            nn.BatchNorm3d(dim // 8),
-            nn.GELU(),
-            nn.Conv3d(dim // 8, dim // 2, kernel_size=1),
-        )
+        # self.channel_interaction = nn.Sequential(
+        #     nn.Conv3d(dim, dim // 8, kernel_size=1),
+        #     nn.BatchNorm3d(dim // 8),
+        #     nn.GELU(),
+        #     nn.Conv3d(dim // 8, dim // 2, kernel_size=1),
+        # )
         self.attn_norm = nn.LayerNorm(dim // 2)
         self.projection = nn.Conv3d(dim, dim // 2, kernel_size=1)
         self.conv_norm = nn.BatchNorm3d(dim // 2)
-        self.spatial_interaction = nn.Sequential(
-            nn.Conv3d(dim // 2, dim // 16, kernel_size=1),
-            nn.BatchNorm3d(dim // 16),
-            nn.GELU(),
-            nn.Conv3d(dim // 16, 1, kernel_size=1)
-        )
+        # self.spatial_interaction = nn.Sequential(
+        #     nn.Conv3d(dim // 2, dim // 16, kernel_size=1),
+        #     nn.BatchNorm3d(dim // 16),
+        #     nn.GELU(),
+        #     nn.Conv3d(dim // 16, 1, kernel_size=1)
+        # )
         ##########################finish########################
 
     def forward(self, x, D=49, H=49, W=49,  mask=None):
@@ -776,8 +784,8 @@ class MixAttention(nn.Module):
 
         x_cnn = self.dwconv3x3(x_cnn) # torch.Size([2, 48, 49, 49, 49])
 
-        channel_interaction = self.channel_interaction(
-            F.adaptive_avg_pool3d(x_cnn, output_size=1)) # torch.Size([2, 24, 1, 1, 1]) 
+        # channel_interaction = self.channel_interaction(
+        #     F.adaptive_avg_pool3d(x_cnn, output_size=1)) # torch.Size([2, 24, 1, 1, 1]) 
         
         x_cnn = self.projection(x_cnn) # torch.Size([2, 24, 49, 49, 49])
 
@@ -787,23 +795,22 @@ class MixAttention(nn.Module):
         q, k, v = qkv[0], qkv[1], qkv[2] # torch.Size([686, 3, 343, 4])
 
 
-        # channel interaction # 
-        x_cnn2v = torch.sigmoid(channel_interaction).reshape(
-            -1, 1, self.num_heads, 1, c // self.num_heads) # torch.Size([2, 1, 3, 1, 8])
-        v = v.reshape(
-            x_cnn2v.shape[0], -1, self.num_heads, n, c // self.num_heads) # torch.Size([2, 343, 3, 343, 8])
-        v = v * x_cnn2v # torch.Size([2, 343, 3, 343, 8]) interaction
-        v = v.reshape(-1, self.num_heads, n, c // self.num_heads) # torch.Size([686, 3, 343, 8])
+        # # channel interaction # 
+        # x_cnn2v = torch.sigmoid(channel_interaction).reshape(
+        #     -1, 1, self.num_heads, 1, c // self.num_heads) # torch.Size([2, 1, 3, 1, 8])
+        # v = v.reshape(
+        #     x_cnn2v.shape[0], -1, self.num_heads, n, c // self.num_heads) # torch.Size([2, 343, 3, 343, 8])
+        # v = v * x_cnn2v # torch.Size([2, 343, 3, 343, 8]) interaction
+        # v = v.reshape(-1, self.num_heads, n, c // self.num_heads) # torch.Size([686, 3, 343, 8])
 
-        k = k.reshape(
-            x_cnn2v.shape[0], -1, self.num_heads, n, c // self.num_heads) # torch.Size([2, 343, 3, 343, 8])
-        k = k * x_cnn2v # torch.Size([2, 343, 3, 343, 8]) interaction
-        k = k.reshape(-1, self.num_heads, n, c // self.num_heads) # torch.Size([686, 3, 343, 8])
+        # channel interaction for k
+        # x_cnn2v = torch.sigmoid(channel_interaction).reshape(
+        #     -1, 1, self.num_heads, 1, c // self.num_heads) # torch.Size([2, 1, 3, 1, 8])
+        # k = k.reshape(
+        #     x_cnn2v.shape[0], -1, self.num_heads, n, c // self.num_heads) # torch.Size([2, 343, 3, 343, 8])
+        # k = k * x_cnn2v # torch.Size([2, 343, 3, 343, 8]) interaction
+        # k = k.reshape(-1, self.num_heads, n, c // self.num_heads) # torch.Size([686, 3, 343, 8])
 
-        q = q.reshape(
-            x_cnn2v.shape[0], -1, self.num_heads, n, c // self.num_heads) # torch.Size([2, 343, 3, 343, 8])
-        q = q * x_cnn2v # torch.Size([2, 343, 3, 343, 8]) interaction
-        q = q.reshape(-1, self.num_heads, n, c // self.num_heads) # torch.Size([686, 3, 343, 8])
 
 
 
@@ -826,15 +833,16 @@ class MixAttention(nn.Module):
         x = (attn @ v).transpose(1, 2).reshape(b, n, c) # torch.Size([686, 343, 24])
 
         # spatial interaction
-        x_spatial = window_reverse2(x, self.window_size, D, H, W, c)
-        spatial_interaction = self.spatial_interaction(x_spatial)
-        x_cnn = torch.sigmoid(spatial_interaction) * x_cnn
+        # x_spatial = window_reverse2(x, self.window_size, D, H, W, c)
+        # spatial_interaction = self.spatial_interaction(x_spatial)
+        # x_cnn = torch.sigmoid(spatial_interaction) * x_cnn
         x_cnn = self.conv_norm(x_cnn) # torch.Size([2, 24, 49, 49, 49])
         # B, C, H, W --> B * H // win * W // win x win*win x C
         x_cnn = window_partition2_(x_cnn, self.window_size)  # torch.Size([686, 343, 24])      
 
         # concat
         x_atten = self.attn_norm(x)
+        
         x = torch.concat([x_atten, x_cnn], axis=-1)
         x = self.proj(x)
         x = self.proj_drop(x)
@@ -1155,7 +1163,6 @@ class BasicLayer(nn.Module):
         norm_layer: Type[LayerNorm] = nn.LayerNorm,
         downsample: Optional[nn.Module] = None,
         use_checkpoint: bool = False,
-        act_layer: str = "GELU",
     ) -> None:
         """
         Args:
@@ -1193,7 +1200,6 @@ class BasicLayer(nn.Module):
                     drop_path=drop_path[i] if isinstance(drop_path, list) else drop_path,
                     norm_layer=norm_layer,
                     use_checkpoint=use_checkpoint,
-                    act_layer=act_layer,
                 )
                 for i in range(depth)
             ]
@@ -1261,7 +1267,6 @@ class SwinTransformer(nn.Module):
         use_checkpoint: bool = False,
         spatial_dims: int = 3,
         downsample="merging",
-        act_layer: str = "GELU",
     ) -> None:
         """
         Args:
@@ -1319,7 +1324,6 @@ class SwinTransformer(nn.Module):
                 norm_layer=norm_layer,
                 downsample=down_sample_mod,
                 use_checkpoint=use_checkpoint,
-                act_layer=act_layer,
             )
             if i_layer == 0:
                 self.layers1.append(layer)

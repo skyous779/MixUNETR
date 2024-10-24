@@ -2,7 +2,7 @@
 Author: skyous 1019364238@qq.com
 Date: 2023-12-24 21:51:43
 LastEditors: skyous 1019364238@qq.com
-LastEditTime: 2024-02-28 16:29:08
+LastEditTime: 2024-08-21 14:53:28
 FilePath: /prostate158-main/prostate158/train.py
 Description: 
 
@@ -323,6 +323,13 @@ class SegmentationTrainer(monai.engines.SupervisedTrainer):
             valid=True, 
             test=False
         )
+        self.test_loader=segmentation_dataloaders(
+            config=config, 
+            train=False, 
+            valid=False, 
+            test=True
+        )
+        
         network=get_model(config=config).to(config.device)
         optimizer=get_optimizer(
             network, 

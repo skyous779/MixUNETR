@@ -2,8 +2,8 @@
 Author: skyous 1019364238@qq.com
 Date: 2023-12-24 21:51:43
 LastEditors: skyous 1019364238@qq.com
-LastEditTime: 2024-01-07 10:45:43
-FilePath: /prostate158-main/train.py
+LastEditTime: 2024-08-23 16:45:17
+FilePath: /prostate158/train.py
 Description: 
 
 Copyright (c) 2024 by ${git_name_email}, All Rights Reserved. 
@@ -77,7 +77,7 @@ trainer.fit_one_cycle()
 trainer.run()
 
 ## finish script with final evaluation of the best model
-trainer.evaluate()
+trainer.evaluate(dataloader=trainer.test_loader)
 
 ## generate a markdown document with segmentation results
 report_generator=ReportGenerator(
@@ -86,7 +86,7 @@ report_generator=ReportGenerator(
     config.log_dir
 )
 
-report_generator.generate_report()
+report_generator.generate_report(animation=False)
 
 
 

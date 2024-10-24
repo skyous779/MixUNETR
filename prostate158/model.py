@@ -2,7 +2,7 @@
 Author: skyous 1019364238@qq.com
 Date: 2023-12-24 21:51:43
 LastEditors: skyous 1019364238@qq.com
-LastEditTime: 2024-01-25 20:57:02
+LastEditTime: 2024-08-17 17:13:37
 FilePath: /prostate158-main/prostate158/model.py
 Description: 
 
@@ -118,7 +118,9 @@ def get_model(config: dict):
                 out_channels=config.model.out_channels,
                 depths=config.model.depth,
                 img_size=(96,96,96),
-                feature_size=48,
+                feature_size=48 if config.model.feature_size is None else config.model.feature_size,
+                act_layer="GELU" if config.model.act_layer is None else config.model.act_layer,
+                # init=config.init,
             )
     elif config.network == "mixunetr_non":
         return MixingUNETR_QKV(

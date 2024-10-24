@@ -14,6 +14,7 @@
 Created on 2023-05-22 14:49:49
 Finished on 2023-05-26 14:49:00
 @author: skyous
+description: no use spatial interaction
 """
 import itertools
 from typing import Optional, Sequence, Tuple, Type, Union
@@ -758,12 +759,12 @@ class MixAttention(nn.Module):
         self.attn_norm = nn.LayerNorm(dim // 2)
         self.projection = nn.Conv3d(dim, dim // 2, kernel_size=1)
         self.conv_norm = nn.BatchNorm3d(dim // 2)
-        self.spatial_interaction = nn.Sequential(
-            nn.Conv3d(dim // 2, dim // 16, kernel_size=1),
-            nn.BatchNorm3d(dim // 16),
-            nn.GELU(),
-            nn.Conv3d(dim // 16, 1, kernel_size=1)
-        )
+        # self.spatial_interaction = nn.Sequential(
+        #     nn.Conv3d(dim // 2, dim // 16, kernel_size=1),
+        #     nn.BatchNorm3d(dim // 16),
+        #     nn.GELU(),
+        #     nn.Conv3d(dim // 16, 1, kernel_size=1)
+        # )
         ##########################finish########################
 
     def forward(self, x, D=49, H=49, W=49,  mask=None):
@@ -825,10 +826,12 @@ class MixAttention(nn.Module):
         attn = self.attn_drop(attn).to(v.dtype) #torch.Size([686, 3, 343, 343]) atten是没有正确的维度
         x = (attn @ v).transpose(1, 2).reshape(b, n, c) # torch.Size([686, 343, 24])
 
+        # no spatial interaction
         # spatial interaction
-        x_spatial = window_reverse2(x, self.window_size, D, H, W, c)
-        spatial_interaction = self.spatial_interaction(x_spatial)
-        x_cnn = torch.sigmoid(spatial_interaction) * x_cnn
+        # x_spatial = window_reverse2(x, self.window_size, D, H, W, c)
+        # spatial_interaction = self.spatial_interaction(x_spatial)
+        # x_cnn = torch.sigmoid(spatial_interaction) * x_cnn
+
         x_cnn = self.conv_norm(x_cnn) # torch.Size([2, 24, 49, 49, 49])
         # B, C, H, W --> B * H // win * W // win x win*win x C
         x_cnn = window_partition2_(x_cnn, self.window_size)  # torch.Size([686, 343, 24])      

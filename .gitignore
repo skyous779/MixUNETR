@@ -147,3 +147,4 @@ config/old
 config/southHP
 southHP_compute_copy.ipynb
 southHP_compute.ipynb
+view_output
